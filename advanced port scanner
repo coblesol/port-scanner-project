@@ -1,0 +1,83 @@
+import socket
+import threading
+from queue import Queue
+
+TARGET = input("Enter target IP or hostname: ").strip()
+START_PORT = int(input("Start port (default 1): ") or 1)
+END_PORT = int(input("End port (default 1024): ") or 1024)
+THREADS = int(input("Number of threads (default 100): ") or 100)
+SCAN_UDP = input("Scan UDP ports as well? (y/N): ").strip().lower() == "y"
+
+print(f"\n[+] Scanning {TARGET} TCP ports {START_PORT}-{END_PORT}{' and UDP' if SCAN_UDP else ''}...")
+
+results = []
+queue = Queue()
+
+def scan_tcp(port):
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(0.5)
+            result = s.connect_ex((TARGET, port))
+            if result == 0:
+                banner = ""
+                try:
+                    s.sendall(b"Hello\r\n")
+                    banner = s.recv(1024).decode(errors="ignore").strip()
+                except Exception:
+                    pass
+                results.append((port, 'TCP', 'Open', banner))
+                print(f"[OPEN] TCP {port} {'- '+banner if banner else ''}")
+            else:
+                print(f"[CLOSED] TCP {port}")
+    except Exception as e:
+        print(f"[ERROR] TCP {port}: {e}")
+
+def scan_udp(port):
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.settimeout(1)
+            s.sendto(b"", (TARGET, port))
+            try:
+                data, _ = s.recvfrom(1024)
+                banner = data.decode(errors="ignore").strip()
+                results.append((port, 'UDP', 'Open', banner))
+                print(f"[OPEN] UDP {port} {'- '+banner if banner else ''}")
+            except socket.timeout:
+                # UDP open/filtered, could be open
+                results.append((port, 'UDP', 'Open|Filtered', ''))
+                print(f"[OPEN|FILTERED] UDP {port}")
+            except Exception as e:
+                print(f"[ERROR] UDP {port}: {e}")
+    except Exception as e:
+        print(f"[ERROR] UDP {port}: {e}")
+
+def worker():
+    while not queue.empty():
+        port, proto = queue.get()
+        if proto == 'TCP':
+            scan_tcp(port)
+        else:
+            scan_udp(port)
+        queue.task_done()
+
+# Fill the queue with ports and protocols
+for port in range(START_PORT, END_PORT+1):
+    queue.put((port, 'TCP'))
+    if SCAN_UDP:
+        queue.put((port, 'UDP'))
+
+# Start threads
+threads = []
+for _ in range(THREADS):
+    t = threading.Thread(target=worker)
+    t.daemon = True
+    threads.append(t)
+    t.start()
+
+queue.join()
+
+print("\nScan complete! Summary below:\n")
+for port, proto, status, banner in sorted(results):
+    print(f"{proto} {port}: {status}{' - '+banner if banner else ''}")
+print(f"\nTotal ports scanned: {(END_PORT-START_PORT+1)*(2 if SCAN_UDP else 1)}")
+print(f"Open/Filtered: {len([r for r in results if r[2].startswith('Open')])}")
