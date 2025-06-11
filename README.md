@@ -1,51 +1,50 @@
-🔍 Port Scanner Project
-This is a multithreaded TCP port scanner written in Python 3. It allows users to scan a range of ports on a target IP address and optionally save the results to a text file.
+# 🔍 Port Scanner Project
 
-The scanner uses threads to quickly check whether each port is open or closed, and can be used on Linux, macOS, or Windows (via PowerShell or terminal).
+A fast, multithreaded TCP port scanner written in Python 3. It scans a range of ports on a given IP address and optionally saves the results to a text file.
 
-🚀 How to Run
-bash
-Copy code
+This scanner works on **Linux**, **macOS**, and **Windows** (via PowerShell or terminal), using Python's `socket` and `concurrent.futures` modules for performance.
+
+---
+
+## 🚀 How to Run
+
+```bash
 python3 port_scanner.py --ip 127.0.0.1 --start-port 1 --end-port 1024 --threads 100 --output results.txt
-Arguments:
-
+Arguments
 --ip: Target IP address (required)
 
---start-port: Starting port (default is 1)
+--start-port: Starting port (default: 1)
 
---end-port: Ending port (default is 1024)
+--end-port: Ending port (default: 1024)
 
---threads: Number of threads to use (default is 100)
+--threads: Number of threads (default: 100)
 
---output: (Optional) Output file to log results
+--output: (Optional) File path to save results
 
 🛠 Branch Breakdown
 main (⚙️ Full Scanner)
-Most detailed version
+Scans all ports in range and prints both OPEN and CLOSED ports
 
-Prints every port in range and shows whether it is OPEN or CLOSED
+Supports saving full results to file
 
-Logs results to a file if --output is passed
+Best for full visibility and logging
 
-Best for learning and debugging, but slower than the others
+advanced (⚡ Performance Optimized)
+Similar to main, but optimized for speed
 
-advanced (⚡ Performance Focused)
-Similar functionality to main but optimized for slightly faster execution
+Quieter output; easier to integrate into scripts or automation
 
-Intended to reduce output noise or integrate into automated tooling later
-
-Still supports logging and threading
+Still uses threading and logging
 
 basic (🔹 Lightweight Version)
-Minimalist version of the scanner
+Stripped-down version
 
-Still uses multithreading, but may only print open ports (depending on how you tweak it)
+May only display open ports
 
-Great for quick scans or small scripts
+Ideal for fast scans and simpler use cases
 
 ✅ Example Output
 bash
-Copy code
 Scanning 192.168.1.1 from port 1 to 1024 using 100 threads...
 Port 22 is CLOSED
 Port 80 is OPEN
@@ -53,8 +52,4 @@ Port 443 is OPEN
 ...
 [+] Full results saved to results.txt
 📌 Notes
-Must be run with Python 3
-
-Be sure to use responsibly — scanning unauthorized networks may be illegal
-
-Let me know if you want the README in Markdown file format or if you want a version that only prints open ports for a quieter output.
+Requires Python 3
